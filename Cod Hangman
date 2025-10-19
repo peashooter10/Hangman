@@ -1,0 +1,329 @@
+def initializare_alfabet():
+    #ordonez literele din alfabet în funcție de frecvență
+    litere = "eairntoulcspmdgfvbșțăîâjzhkqwxy"
+    lista = []
+    for i, lit in enumerate(litere):
+        lista.append({
+            "litera": lit,
+            "folosita": False,
+            "indice_frecventa": i
+        })
+    return lista
+
+def litere_folosite(alfabet, incercare):
+    #marchez literele
+    for c in incercare:
+        if c != '*':
+            for lit in alfabet:
+                if lit["litera"] == c:
+                    lit["folosita"] = True
+                    break
+    return alfabet
+
+def lungime_minima(incercare):
+    #aflu lungimea minima a unui sir de *
+    lit = []
+    lung = 0
+    lung_min = float('inf')
+
+    #aflu lungimea minima
+    for char in incercare:
+        if char == '*':
+            lung += 1
+        else:
+            if lung > 0:
+                lung_min = min(lung_min, lung)
+            lung = 0
+    if lung > 0:
+        lung_min = min(lung_min, lung)
+
+    if lung_min == float('inf'):
+        return [], 0
+
+    #gasesc literele cu aceeasi lungime
+    lung = 0
+    for i in range(len(incercare)):
+        if incercare[i] == '*':
+            lung += 1
+        else:
+            if lung == lung_min:
+                lit.append(i - 1)
+            lung = 0
+    if lung == lung_min:
+        lit.append(len(incercare) - 1)
+
+    return lit, lung_min
+
+def analiza(pozitii_litere, lung_min, incercare):
+    punct = -1
+    scor_max = 0
+    for i in pozitii_litere:
+        contor = 0
+        for j in range(max(0, i - lung_min), min(len(incercare), i + lung_min + 1)):
+            if incercare[j] != '*':
+                contor += 1
+
+        #caut vecinii mai apropiati de centru
+        dist_centru = abs(i - len(incercare) // 2)
+        scor = contor / (dist_centru + 1)
+
+        if scor > scor_max:
+            punct = i
+            scor_max = scor
+
+    return punct
+
+def vector_vecini(punct, incercare):
+    #imi pun vecinii într-o listă să îi analizez
+    vecini = []
+    for j in range(max(0, punct - 2), min(len(incercare), punct + 3)):
+        vecini.append(incercare[j])
+    return vecini
+
+def asemanari(sablon, cod, optiuni,grup9):
+    #aflu litere în funcție de grupurile de litere
+    grup1 = ["are", "era", "ară", "raf", "fil", "tre", "sta", "ene", "ine"]#vcv
+    grup2 = ["ram", "man", "rea", "tra", "ste", "ver", "rat", "ten", "car","tic"]#cvc
+    grup3 = ["iar", "oar", "eam", "tar", "cer", "lor", "tri", "pri"]#vvc
+    grup4 = ["cce", "nno", "înn", "mno", "pne", "acc", "pre", "pro", "gra", "che", "chi", "ghe", "ghi", "sta", "tra", "str"]#ccv
+    grup5 = ["oai", "aie", "eau", "eai", "eie", "iau", "ioi"]#vvv
+    grup6 = ["ul", "le", "re", "in", "an", "ra", "te", "nt", "on", "ar"]#2 lit
+    grup7 = ["pre", "con", "pro", "tra", "str", "sub", "dis"]#prefixe
+    grup8 = ["are", "ist", "tor", "ant", "ine", "tul", "rea","lea",'lor']#sufixe
+
+    toate_grupurile = [grup9, grup1, grup2, grup3, grup4, grup5,grup6, grup7,grup8]
+
+    #verific un grup
+    if cod >= 1 and cod <= 9:
+        grup = toate_grupurile[cod - 1]
+        for g in grup:
+            potriviri = 0
+            ultima_litera = None
+            for i in range(min(len(sablon), len(g))):
+                if sablon[i] == g[i]:
+                    potriviri += 1
+                elif sablon[i] == '*':
+                    ultima_litera = g[i]
+
+            if potriviri >= 2 and ultima_litera:
+                optiuni.append(ultima_litera)
+
+    if cod < 9:
+        asemanari(sablon, cod + 1, optiuni,grup9)
+
+    return optiuni
+
+def urm_alegere(alfabet, optiuni):
+    #aleg următoarea literă
+    if optiuni:
+        for opt in optiuni:
+            for lit in alfabet:
+                if lit["litera"] == opt and not lit["folosita"]:
+                    return opt
+
+    #dacă nu găsesc revin la alfabet
+    for lit in alfabet:
+        if not lit["folosita"]:
+            return lit["litera"]
+
+    return None
+
+def sugestie(punct, incercare, alfabet, grup9):
+    #context/informații despre vecini
+    vecini = vector_vecini(punct, incercare)
+
+    #creez sablonul
+    sablon = []
+    for i, ch in enumerate(vecini):
+        if i == min(2, punct):
+            sablon.append('*')
+        elif ch == '*':
+            sablon.append('*')
+        else:
+            sablon.append(ch)
+
+    sablon_str = ''.join(sablon)
+
+    #număr totalul de litere necunoscute
+    contor_necunoscut = sablon_str.count('*')
+
+    #dacă toate sunt necunoscute, apelez la frecvența literelor
+    if contor_necunoscut >= len(sablon_str) - 1:
+        return urm_alegere(alfabet, [])
+
+    #caut asemănări
+    optiuni = []
+    asemanari(sablon_str, 1, optiuni,grup9)
+
+    #aleg cea mai bună literă
+    alegere = urm_alegere(alfabet, optiuni)
+
+    return alegere
+
+def grupuri_de_doua_trei_patru_litere(incercare, grup9, alfabet):
+    for lungime in range(2, 5): 
+        grupuri = []
+        for i in range(len(incercare) - lungime + 1):
+            grup = incercare[i:i + lungime]
+            # luăm doar grupurile complet cunoscute
+            if '*' not in grup:
+                suma = 0
+                for lit in grup:
+                    for a in alfabet:
+                        if a["litera"] == lit:
+                            suma += a["indice_frecventa"]
+                            break
+                grupuri.append((grup, suma))
+
+        #trec mai departe daca nu s-au gasit grupuri
+        if not grupuri:
+            continue
+
+        #sortez dupa cod, suma cea mai mica are priorittate
+        grupuri.sort(key=lambda x: x[1])
+
+        #pastrez primele 3 grupuri pentru fiecare lungime
+        for grup, scor in grupuri[:3]:
+            if grup not in grup9:
+                grup9.append(grup)
+
+    return grup9
+
+def valideaza_intrare(cuvant, pattern):
+    if not cuvant or not pattern:
+        return False, "Cuvânt sau pattern gol"
+
+    if len(cuvant) != len(pattern):
+        return False, f"Lungimi diferite: cuvânt={len(cuvant)}, pattern={len(pattern)}"
+
+    #verific dacă pattern-ul este valid (doar litere și *)
+    for i, (c, p) in enumerate(zip(cuvant, pattern)):
+        if p != '*' and p != c:
+            return False, f"Pattern incorect la poziția {i}: pattern='{p}' dar cuvânt='{c}'"
+
+    return True, ""
+
+def joc_hangman(cuvant_de_ghicit, incercare_initiala=None):
+    #funcția principală
+    pattern = incercare_initiala if incercare_initiala else '*' * len(cuvant_de_ghicit)
+    valid, mesaj = valideaza_intrare(cuvant_de_ghicit, pattern)
+    if not valid:
+        print(f"Eroare validare: {mesaj}")
+        return None
+
+    #initializare
+    if incercare_initiala is None:
+        incercare = '*' * len(cuvant_de_ghicit)
+    else:
+        incercare = incercare_initiala
+
+    alfabet = initializare_alfabet()
+    attempts = 0
+
+    #marchez literele folosite
+    litere_folosite(alfabet, incercare)
+
+    grup9=[]
+
+    while '*' in incercare:
+        #caut cea mai mică lungime
+        lit, lung_min = lungime_minima(incercare)
+
+        if not lit:
+            print("nu mai sunt litere necunoscute!")
+            return None
+
+        #aflu cea mai bună poziție
+        punct = analiza(lit, lung_min, incercare)
+
+        #aleg o literă
+        litera_sugerata = sugestie(punct, incercare, alfabet, grup9)
+
+        if litera_sugerata is None:
+            print("Nu mai sunt litere de ghicit!")
+            break
+
+        #rezultate și teste
+        #print(f"Cuvânt de ghicit: {cuvant_de_ghicit}")
+        #print(f"Încercare curentă: {incercare}")
+        #print(f"Poziție optimă: {punct}")
+        #print(f"Litera sugerată: {litera_sugerata}")
+        #print(f"Context: {vector_vecini(punct, incercare)}")
+
+        #update
+        noua_incercare = ""
+        found = False
+        for i in range(len(cuvant_de_ghicit)):
+            if cuvant_de_ghicit[i] == litera_sugerata:
+                noua_incercare += litera_sugerata
+                found = True
+            else:
+                noua_incercare += incercare[i]
+        incercare = noua_incercare
+        attempts += 1
+
+
+        #marchez litera citita
+        for lit in alfabet:
+            if lit["litera"] == litera_sugerata:
+                lit["folosita"] = True
+                break
+
+    if '*' not in incercare:
+        grupuri_de_doua_trei_patru_litere(incercare, grup9, alfabet)
+        print(f"Cuvântul {incercare} a fost ghicit din {attempts} încercări.\n")
+
+    return attempts
+
+def run():
+    import re
+    import csv
+    from datetime import datetime
+
+    #citesc fisierul
+    with open('/content/drive/MyDrive/cuvinte_de_verificat (1).txt', 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    result = []
+    for line in lines:
+        parts = line.strip().split(';')
+        if len(parts) >= 3:
+            pattern = parts[1].strip().lower()
+            word = parts[2].strip().lower()
+            result.append((pattern, word))
+
+    #deschid fisierul csv pentru scriere
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_filename = f'/content/rezultate_hangman_{timestamp}.csv'
+
+    with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
+        csv_writer = csv.writer(csvfile)
+        #header
+        csv_writer.writerow(['Cuvant', 'Pattern_Initial', 'Incercari', 'Status'])
+
+        total_attempts = 0
+        succes = 0
+        esecuri = 0
+
+        for pattern, word in result:
+            print(f"Cuvânt: {word}; Indiciu: {pattern}")
+            attempts = joc_hangman(word, pattern)
+
+            if attempts is not None:
+                total_attempts += attempts
+                status = 'Success'
+                succes += 1
+            else:
+                attempts = 0
+                status = 'Failed'
+                esecuri += 1
+
+            #scriu in csv
+            csv_writer.writerow([word, pattern, attempts, status])
+
+        print(f"\nTotal încercări: {total_attempts}")
+        print(f"Cuvinte ghicite: {succes}")
+        print(f"Eșecuri: {esecuri}")
+        print(f"\nRezultatele au fost salvate în: {csv_filename}")
+
+run()
