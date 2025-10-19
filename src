@@ -1,7 +1,8 @@
 def initializare_alfabet():
-    #ordonez literele din alfabet în funcție de frecvență
+    #ordonez literele din alfabet în funcție de frecvență pentru a le căuta mai eficient
     litere = "eairntoulcspmdgfvbșțăîâjzhkqwxy"
     lista = []
+    #folosesc un dicționar pentru a stoca litera, dacă aceasta este folosită și care este indicele aferent
     for i, lit in enumerate(litere):
         lista.append({
             "litera": lit,
@@ -11,7 +12,7 @@ def initializare_alfabet():
     return lista
 
 def litere_folosite(alfabet, incercare):
-    #marchez literele
+    #marchez literele folosite
     for c in incercare:
         if c != '*':
             for lit in alfabet:
@@ -21,7 +22,9 @@ def litere_folosite(alfabet, incercare):
     return alfabet
 
 def lungime_minima(incercare):
-    #aflu lungimea minima a unui sir de *
+    #aflu lungimea minima a unui sir de * 
+    #astfel, găsesc litera necunoscuta * care e inconjurata de cele mai multe litere cunoscute
+    #pentru a face o alegere optima
     lit = []
     lung = 0
     lung_min = float('inf')
@@ -40,7 +43,7 @@ def lungime_minima(incercare):
     if lung_min == float('inf'):
         return [], 0
 
-    #gasesc literele cu aceeasi lungime
+    #gasesc literele cu aceeasi lungime aferenta
     lung = 0
     for i in range(len(incercare)):
         if incercare[i] == '*':
@@ -55,6 +58,7 @@ def lungime_minima(incercare):
     return lit, lung_min
 
 def analiza(pozitii_litere, lung_min, incercare):
+    #analizez literele găsite pentru a le analiza în continuare numărul de vecini cunoscuți
     punct = -1
     scor_max = 0
     for i in pozitii_litere:
@@ -81,7 +85,7 @@ def vector_vecini(punct, incercare):
     return vecini
 
 def asemanari(sablon, cod, optiuni,grup9):
-    #aflu litere în funcție de grupurile de litere
+    #aflu litere în funcție de grupurile de litere, comparând spațiile pline/goale cu pattern-urile furnizate
     grup1 = ["are", "era", "ară", "raf", "fil", "tre", "sta", "ene", "ine"]#vcv
     grup2 = ["ram", "man", "rea", "tra", "ste", "ver", "rat", "ten", "car","tic"]#cvc
     grup3 = ["iar", "oar", "eam", "tar", "cer", "lor", "tri", "pri"]#vvc
@@ -100,6 +104,7 @@ def asemanari(sablon, cod, optiuni,grup9):
             potriviri = 0
             ultima_litera = None
             for i in range(min(len(sablon), len(g))):
+                #dacă găsesc o asemănare parțială cresc contorul
                 if sablon[i] == g[i]:
                     potriviri += 1
                 elif sablon[i] == '*':
@@ -114,7 +119,7 @@ def asemanari(sablon, cod, optiuni,grup9):
     return optiuni
 
 def urm_alegere(alfabet, optiuni):
-    #aleg următoarea literă
+    #aleg următoarea literă, dacă există o potrivire aleg litera lipsă, dacă nu apelez la frecvența literelor
     if optiuni:
         for opt in optiuni:
             for lit in alfabet:
@@ -161,6 +166,7 @@ def sugestie(punct, incercare, alfabet, grup9):
     return alegere
 
 def grupuri_de_doua_trei_patru_litere(incercare, grup9, alfabet):
+    #caut, după ce cuvântul e ghicit, grupuri de litere des-folosite
     for lungime in range(2, 5): 
         grupuri = []
         for i in range(len(incercare) - lungime + 1):
