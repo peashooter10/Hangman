@@ -1,3 +1,6 @@
+Link Google Colab
+https://colab.research.google.com/drive/1E6CSayV_w88Qzgdem_IWxm1LCsL_nRWu
+
 # Hangman
 
 RULARE
